@@ -25,6 +25,11 @@ def save_dictionary(filename, dictionary):
         writer = csv.writer(file)
         for english, spanish, consecutive_correct in dictionary:
             writer.writerow([english, spanish, consecutive_correct])
+            
+def move_to_removed(removed_filename, removed_word):
+    with open(removed_filename, 'a', newline='') as removed_file:
+        writer = csv.writer(removed_file)
+        writer.writerow(removed_word)
 
 def ask_question(dictionary):
     score = 0
@@ -38,30 +43,41 @@ def ask_question(dictionary):
             print("Correct!")
             consecutive_correct += 1
             if consecutive_correct >= 5:
-                del dictionary[i]  # Remove the word if answered correctly 5 times consecutively
+                move_to_removed(removed_filename, dictionary[i])  # Move the word to the removed file
+                del dictionary[i]  # Remove the word from the dictionary
         else:
             print(f"Wrong! The correct answer is '{spanish}'.")
             consecutive_correct = 0
             wrong_attempts += 1
         dictionary[i][2] = consecutive_correct
 
-    score = total_words - wrong_attempts  # Calculate the score based on the number of correct answers before the last question
+    score = total_words - wrong_attempts
     
     return score, total_words
 
 
 def main():
-    progress_filename = "progress.csv"
-
     parser = argparse.ArgumentParser(description="Dictionary Quiz")
     parser.add_argument("--file", help="Specify the CSV file for the dictionary", default="all.csv")
     args = parser.parse_args()
 
     dictionary_filename = args.file
 
+    dictionary_filename = args.file
+    progress_filename = "progress.csv"
+    removed_filename = "removed.csv"
+
     if not os.path.exists(dictionary_filename):
         print(f"The dictionary file '{dictionary_filename}' does not exist.")
         return
+    
+    if not os.path.exists(progress_filename):
+        with open(progress_filename, 'w', newline=''):  # Create progress file if it doesn't exist
+            pass
+    
+    if not os.path.exists(removed_filename):
+        with open(removed_filename, 'w', newline=''):  # Create removed file if it doesn't exist
+            pass
     
     dictionary = read_dictionary(dictionary_filename)
     
