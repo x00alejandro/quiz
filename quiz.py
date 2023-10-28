@@ -31,7 +31,7 @@ def move_to_removed(removed_filename, removed_word):
         writer = csv.writer(removed_file)
         writer.writerow(removed_word)
 
-def ask_question(dictionary):
+def ask_question(dictionary, no_count):
     score = 0
     wrong_attempts = 0
     total_words = len(dictionary)
@@ -41,17 +41,20 @@ def ask_question(dictionary):
         user_answer = input(f"What is the Spanish translation of '{english}': ").strip().lower()
         if user_answer == spanish.lower():
             print("Correct!")
-            consecutive_correct += 1
-            if consecutive_correct >= 5:
-                move_to_removed(removed_filename, dictionary[i])  # Move the word to the removed file
-                del dictionary[i]  # Remove the word from the dictionary
+            if not no_count:
+                consecutive_correct += 1
+                if consecutive_correct >= 5:
+                    move_to_removed(removed_filename, dictionary[i])  # Move the word to the removed file
+                    del dictionary[i]  # Remove the word from the dictionary
+            score += 1
         else:
             print(f"Wrong! The correct answer is '{spanish}'.")
             consecutive_correct = 0
             wrong_attempts += 1
         dictionary[i][2] = consecutive_correct
 
-    score = total_words - wrong_attempts
+    if not no_count:
+        score = total_words - wrong_attempts
     
     return score, total_words
 
@@ -59,9 +62,8 @@ def ask_question(dictionary):
 def main():
     parser = argparse.ArgumentParser(description="Dictionary Quiz")
     parser.add_argument("--file", help="Specify the CSV file for the dictionary", default="all.csv")
+    parser.add_argument("--no-count", action="store_true", help="Do not update progress or remove words")
     args = parser.parse_args()
-
-    dictionary_filename = args.file
 
     dictionary_filename = args.file
     progress_filename = "progress.csv"
@@ -78,22 +80,22 @@ def main():
     if not os.path.exists(removed_filename):
         with open(removed_filename, 'w', newline=''):  # Create removed file if it doesn't exist
             pass
-    
+
     dictionary = read_dictionary(dictionary_filename)
     
     print("Welcome to the Dictionary Quiz!")
     
-    score, total_words = ask_question(dictionary)
+    score, total_words = ask_question(dictionary, args.no_count)
     
     print(f"Quiz ended. Your score: {score}/{total_words}")
     
-    with open(progress_filename, 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([datetime.date.today(), total_words, score])
+    if not args.no_count:
+        with open(progress_filename, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([datetime.date.today(), total_words, score])
     
     save_dictionary(dictionary_filename, dictionary)
 
 if __name__ == "__main__":
     main()
-
 
