@@ -51,7 +51,7 @@ def update_progress(progress_filename, score, total_words, no_count):
 
         total = int(total) if total.isdigit() else 0
         correct = int(correct) if correct.isdigit() else 0
-        percent_correct = f"{(correct / total * 100):.2f}%" if total > 0 else "0.00%"
+        percent_correct = f"{round(correct / total * 100)}%" if total > 0 else "0%"
         today_entry = [today_date, total, score, percent_correct, counter]
         with open(progress_filename, 'w', newline='') as file:
             writer = csv.writer(file)
@@ -63,7 +63,7 @@ def update_progress(progress_filename, score, total_words, no_count):
                 else:
                     writer.writerow(entry)
     else:
-        percent_correct = f"{(score / total_words * 100):.2f}%" if total_words > 0 else "0.00%"
+        percent_correct = f"{round(score / total_words * 100)}%" if total_words > 0 else "0%"
         today_entry = [str(current_date), total_words, score, percent_correct, 1]
         with open(progress_filename, 'a', newline='') as file:
             writer = csv.writer(file)
@@ -85,7 +85,6 @@ def ask_question(dictionary, no_count):
             user_answer = input(f"What is the English translation of '{spanish}': ").strip().lower()
 
         if (is_english_to_spanish and user_answer == spanish.lower()) or (not is_english_to_spanish and user_answer == english.lower()):
-            print("Correct!")
             if not no_count:
                 consecutive_correct += 1
                 if consecutive_correct >= 5:
@@ -131,13 +130,16 @@ def main():
 
     print("Welcome to the Dictionary Quiz!")
 
-    score, total_words = ask_question(dictionary, no_count)
+    total_words = len(dictionary)  # Count the total words for the actual quiz
+
+    score, _ = ask_question(dictionary, no_count)  # Use _ for total_words since it's already calculated
 
     print(f"Quiz ended. Your score: {score}/{total_words}")
 
     update_progress(progress_filename, score, total_words, no_count)
 
     save_dictionary(dictionary_filename, dictionary)
+
 
 if __name__ == "__main__":
     main()
