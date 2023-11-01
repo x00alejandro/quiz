@@ -25,11 +25,6 @@ def save_dictionary(filename, dictionary):
         for english, spanish, consecutive_correct in dictionary:
             writer.writerow([english, spanish, consecutive_correct])
 
-def move_to_removed(removed_filename, removed_word):
-    with open(removed_filename, 'a', newline='') as removed_file:
-        writer = csv.writer(removed_file)
-        writer.writerow(removed_word)
-
 def update_progress(progress_filename, score, total_words, no_count):
     current_date = datetime.date.today()
     today_entry = None
@@ -87,19 +82,12 @@ def ask_question(dictionary, no_count):
         if (is_english_to_spanish and user_answer == spanish.lower()) or (not is_english_to_spanish and user_answer == english.lower()):
             if not no_count:
                 consecutive_correct += 1
-                if consecutive_correct >= 5:
-                    move_to_removed(removed_filename, dictionary[i])
-                    del dictionary[i]
-                    i -= 1  # Adjust index after deletion
             score += 1
         else:
             print(f"Wrong! The correct answer is '{spanish if is_english_to_spanish else english}'.")
             consecutive_correct = 0
             wrong_attempts += 1
         dictionary[i][2] = consecutive_correct
-
-    if not no_count:
-        score = total_words - wrong_attempts
 
     return score, total_words
 
@@ -111,7 +99,6 @@ def main():
 
     dictionary_filename = args.file
     progress_filename = "progress.csv"
-    removed_filename = "removed.csv"
     no_count = args.no_count
 
     if not os.path.exists(dictionary_filename):
@@ -120,10 +107,6 @@ def main():
 
     if not os.path.exists(progress_filename):
         with open(progress_filename, 'w', newline=''):  # Create progress file if it doesn't exist
-            pass
-
-    if not os.path.exists(removed_filename):
-        with open(removed_filename, 'w', newline=''):  # Create removed file if it doesn't exist
             pass
 
     dictionary = read_dictionary(dictionary_filename)
@@ -136,7 +119,12 @@ def main():
 
     print(f"Quiz ended. Your score: {score}/{total_words}")
 
-    update_progress(progress_filename, score, total_words, no_count)
+    if not no_count:
+        for i in range(len(dictionary) - 1, -1, -1):
+            if dictionary[i][2] >= 5:
+                dictionary.pop(i)  # Remove words with consecutive count >= 5
+
+    update_progress(progress_filename, score, len(dictionary), no_count)
 
     save_dictionary(dictionary_filename, dictionary)
 
